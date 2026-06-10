@@ -277,32 +277,37 @@ public class SteamController extends AbstractController {
 
         int rawButtons = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
 
-        if (rawButtons != lastRawButtons) {
+        if (lastRawButtons == -1) {
             lastRawButtons = rawButtons;
-            
-            java.util.ArrayList<String> pressedButtons = new java.util.ArrayList<>();
-            if ((b0 & 0x01) != 0) pressedButtons.add("A");
-            if ((b0 & 0x02) != 0) pressedButtons.add("B");
-            if ((b0 & 0x04) != 0) pressedButtons.add("X");
-            if ((b0 & 0x08) != 0) pressedButtons.add("Y");
-            if ((b0 & 0x10) != 0) pressedButtons.add("SDL_GAMEPAD_BUTTON_MISC1");
-            if ((b0 & 0x20) != 0) pressedButtons.add("RS Click");
-            if ((b0 & 0x40) != 0) pressedButtons.add("Start");
-            if ((b0 & 0x80) != 0) pressedButtons.add("Right Paddle 1");
-            if ((b1 & 0x01) != 0) pressedButtons.add("Right Paddle 2");
-            if ((b1 & 0x02) != 0) pressedButtons.add("RB");
-            if ((b1 & 0x04) != 0) pressedButtons.add("DPAD Down");
-            if ((b1 & 0x08) != 0) pressedButtons.add("DPAD Right");
-            if ((b1 & 0x10) != 0) pressedButtons.add("DPAD Left");
-            if ((b1 & 0x20) != 0) pressedButtons.add("DPAD Up");
-            if ((b1 & 0x40) != 0) pressedButtons.add("Back");
-            if ((b1 & 0x80) != 0) pressedButtons.add("LS Click");
-            if ((b2 & 0x01) != 0) pressedButtons.add("Guide");
-            if ((b2 & 0x02) != 0) pressedButtons.add("Left Paddle 1");
-            if ((b2 & 0x04) != 0) pressedButtons.add("Left Paddle 2");
-            if ((b2 & 0x08) != 0) pressedButtons.add("LB");
+        } else if (rawButtons != lastRawButtons) {
+            int changed = rawButtons ^ lastRawButtons;
+            lastRawButtons = rawButtons;
 
-            LimeLog.info("Triton Buttons Change: " + pressedButtons.toString());
+            java.util.ArrayList<String> pressedList = new java.util.ArrayList<>();
+            java.util.ArrayList<String> releasedList = new java.util.ArrayList<>();
+
+            for (int bit = 0; bit < 32; bit++) {
+                if ((changed & (1 << bit)) != 0) {
+                    String name = getButtonName(bit);
+                    if (name != null) {
+                        if ((rawButtons & (1 << bit)) != 0) {
+                            pressedList.add(name);
+                        } else {
+                            releasedList.add(name);
+                        }
+                    }
+                }
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.format("Triton Buttons Change: Raw=0x%08X", rawButtons));
+            if (!pressedList.isEmpty()) {
+                sb.append(" Pressed: ").append(pressedList.toString());
+            }
+            if (!releasedList.isEmpty()) {
+                sb.append(" Released: ").append(releasedList.toString());
+            }
+            LimeLog.info(sb.toString());
         }
 
         setButtonFlag(ControllerPacket.A_FLAG, b0 & 0x01);
@@ -515,4 +520,40 @@ public class SteamController extends AbstractController {
     private void enableNotification(UUID chrUuid) { queueGattOperation(GattOperation.enableNotification(mGatt, chrUuid)); }
     public void writeCharacteristic(UUID uuid, byte[] value) { queueGattOperation(GattOperation.writeCharacteristic(mGatt, uuid, value)); }
     public void readCharacteristic(UUID uuid) { queueGattOperation(GattOperation.readCharacteristic(mGatt, uuid)); }
+
+    private String getButtonName(int bit) {
+        switch (bit) {
+            case 0: return "A";
+            case 1: return "B";
+            case 2: return "X";
+            case 3: return "Y";
+            case 4: return "SDL_GAMEPAD_BUTTON_MISC1";
+            case 5: return "RS Click";
+            case 6: return "Start";
+            case 7: return "Right Paddle 1";
+            case 8: return "Right Paddle 2";
+            case 9: return "RB";
+            case 10: return "DPAD Down";
+            case 11: return "DPAD Right";
+            case 12: return "DPAD Left";
+            case 13: return "DPAD Up";
+            case 14: return "Back";
+            case 15: return "LS Click";
+            case 16: return "Guide";
+            case 17: return "Left Paddle 1";
+            case 18: return "Left Paddle 2";
+            case 19: return "LB";
+            case 20: return "Right Stick Touch";
+            case 21: return "Right Trackpad Touch";
+            case 22: return "Right Trackpad Click";
+            case 23: return "Right Trigger Touch";
+            case 24: return "Left Stick Touch";
+            case 25: return "Left Trackpad Touch";
+            case 26: return "Left Trackpad Click";
+            case 27: return "Left Trigger Touch";
+            case 28: return "Right Grip Touch";
+            case 29: return "Left Grip Touch";
+            default: return "Bit" + bit;
+        }
+    }
 }

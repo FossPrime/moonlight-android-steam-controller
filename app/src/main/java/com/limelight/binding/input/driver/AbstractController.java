@@ -54,8 +54,10 @@ public abstract class AbstractController {
     }
 
     protected void reportInput() {
-        listener.reportControllerState(deviceId, buttonFlags, leftStickX, leftStickY,
-                rightStickX, rightStickY, leftTrigger, rightTrigger);
+        if (listener != null) {
+            listener.reportControllerState(deviceId, buttonFlags, leftStickX, leftStickY,
+                    rightStickX, rightStickY, leftTrigger, rightTrigger);
+        }
     }
 
     public abstract boolean start();
@@ -73,10 +75,14 @@ public abstract class AbstractController {
     public abstract void rumbleTriggers(short leftTrigger, short rightTrigger);
 
     protected void notifyDeviceRemoved() {
-        listener.deviceRemoved(this);
+        if (listener != null) {
+            listener.deviceRemoved(this);
+        }
     }
 
     protected void notifyDeviceAdded() {
-        listener.deviceAdded(this);
+        if (listener != null) {
+            listener.deviceAdded(this);
+        }
     }
 }

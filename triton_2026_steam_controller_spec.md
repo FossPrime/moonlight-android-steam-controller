@@ -74,6 +74,23 @@ The Triton controller supports **20 digital buttons**. In the C++ native layer (
 | **18** | `b2 & 0x04` | **Left Paddle 2** | `SDL_GAMEPAD_BUTTON_LEFT_PADDLE2` | `ControllerPacket.PADDLE4_FLAG` |
 | **19** | `b2 & 0x08` | **LB** | `SDL_GAMEPAD_BUTTON_LEFT_SHOULDER` | `ControllerPacket.LB_FLAG` |
 
+### Capacitive Touch / Haptic "Click" Sensors
+
+Triton includes capacitive touch sensors mapped to the upper bits of the 32-bit button mask. When touch contact is made or broken, these transitions act as digital button events.
+
+| Raw Bit Index | Byte / Bit Mask | Sensor Name | Description | ON Hex Code | OFF Hex Code |
+| :---: | :--- | :--- | :--- | :--- | :--- |
+| **20** | `b2 & 0x10` | **Right Stick Touch** | Capacitive touch on Right Thumbstick | `0x00100000` | `0x00000000` |
+| **21** | `b2 & 0x20` | **Right Trackpad Touch** | Capacitive touch (`trackpad_Z_on`) on Right Trackpad | `0x00200000` | `0x00000000` |
+| **22** | `b2 & 0x40` | **Right Trackpad Click** | Physical click on Right Trackpad | `0x00400000` | `0x00000000` |
+| **23** | `b2 & 0x80` | **Right Trigger Touch** | Capacitive touch on Right Trigger | `0x00800000` | `0x00000000` |
+| **24** | `b3 & 0x01` | **Left Stick Touch** | Capacitive touch on Left Thumbstick | `0x01000000` | `0x00000000` |
+| **25** | `b3 & 0x02` | **Left Trackpad Touch** | Capacitive touch (`trackpad_Z_on`) on Left Trackpad | `0x02000000` | `0x00000000` |
+| **26** | `b3 & 0x04` | **Left Trackpad Click** | Physical click on Left Trackpad | `0x04000000` | `0x00000000` |
+| **27** | `b3 & 0x08` | **Left Trigger Touch** | Capacitive touch on Left Trigger | `0x08000000` | `0x00000000` |
+| **28** | `b3 & 0x10` | **Right Grip Touch** | Capacitive touch on Right Grip | `0x10000000` | `0x00000000` |
+| **29** | `b3 & 0x20` | **Left Grip Touch** | Capacitive touch on Left Grip | `0x20000000` | `0x00000000` |
+
 ---
 
 ## 4. Gyroscope & Accelerometer (IMU)
@@ -99,7 +116,7 @@ Triton features dual **Linear Resonant Actuators (LRAs)** instead of traditional
 
 * **Rumble Emulation**: Standard low-frequency and high-frequency rumble commands sent by the host (GFE/Sunshine) are parsed by the client. The driver maps these to standard Bluetooth HID Output Reports sent to Triton's command characteristic, which Triton's internal firmware translates into LRA vibration patterns.
 * **Trigger Rumble**: Triton supports trigger-specific rumble (independent haptic feedback on the analog triggers).
-* **Capacitive Touch Activation**: Triton features capacitive touch sensors on the trackpads and sticks ("Grip Sense"). Haptic "clicks" or textures are generated locally by the controller when touch events are detected, simulating mechanical buttons.
+* **Capacitive Touch Activation**: Triton features capacitive touch sensors on the trackpads, sticks, and grips ("Grip Sense"). Haptic "clicks" or textures are generated locally by the controller when touch events are detected, simulating mechanical buttons.
 
 ---
 

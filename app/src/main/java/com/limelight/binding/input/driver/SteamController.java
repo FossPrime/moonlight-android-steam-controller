@@ -527,7 +527,7 @@ public class SteamController extends AbstractController {
             case 1: return "B";
             case 2: return "X";
             case 3: return "Y";
-            case 4: return "SDL_GAMEPAD_BUTTON_MISC1";
+            case 4: return "Share";
             case 5: return "RS Click";
             case 6: return "Start";
             case 7: return "Right Paddle 1";
@@ -546,11 +546,11 @@ public class SteamController extends AbstractController {
             case 20: return "Right Stick Touch";
             case 21: return "Right Trackpad Touch";
             case 22: return "Right Trackpad Click";
-            case 23: return "Right Trigger Touch";
+            case 23: return "Right Trigger";
             case 24: return "Left Stick Touch";
             case 25: return "Left Trackpad Touch";
             case 26: return "Left Trackpad Click";
-            case 27: return "Left Trigger Touch";
+            case 27: return "Left Trigger";
             case 28: return "Right Grip Touch";
             case 29: return "Left Grip Touch";
             default: return "Bit" + bit;

@@ -43,6 +43,9 @@ public class SteamController extends AbstractController {
     // Report characteristic (for entering valve mode on D0G)
     static final UUID reportCharacteristic = UUID.fromString("100F6C34-1735-4313-B402-38567131E5F3");
 
+    // Triton rumble output report characteristic (100F6C[ID+53] -> ID 0x80 (128) + 53 = 181 = B5)
+    static final UUID tritonRumbleCharacteristic = UUID.fromString("100F6CB5-1735-4313-B402-38567131E5F3");
+
     // D0G valve mode command
     static final byte[] enterValveMode = new byte[] { (byte)0xC0, (byte)0x87, 0x03, 0x08, 0x07, 0x00 };
 
@@ -56,6 +59,8 @@ public class SteamController extends AbstractController {
     private int lastRawButtons = -1;
     public static volatile boolean isShareButtonPressed = false;
     public static volatile boolean isRightTrackpadClicked = false;
+    
+    private java.util.HashMap<Integer, BluetoothGattCharacteristic> mOutputReportChars = new java.util.HashMap<>();
 
 
     @SuppressLint("NewApi")
@@ -202,6 +207,9 @@ public class SteamController extends AbstractController {
                 LimeLog.info("Found Valve Steam Controller GATT service");
 
                 for (BluetoothGattCharacteristic chr : service.getCharacteristics()) {
+                    LimeLog.info("Discovered characteristic: " + chr.getUuid() + " properties: 0x" + java.lang.Integer.toHexString(chr.getProperties()));
+                }
+                for (BluetoothGattCharacteristic chr : service.getCharacteristics()) {
                     if (chr.getUuid().equals(inputCharacteristicTriton_0x45)) {
                         LimeLog.info("Found Triton input characteristic 0x45");
                         mDetectedProductId = TRITON_BLE_PID;
@@ -214,6 +222,18 @@ public class SteamController extends AbstractController {
                         LimeLog.info("Found D0G input characteristic");
                         mDetectedProductId = D0G_BLE2_PID;
                         mInputCharacteristic = chr.getUuid();
+                    } else {
+                        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("100F6C([0-9A-Z]{2})", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(chr.getUuid().toString());
+                        if (matcher.find()) {
+                            try {
+                                int i = Integer.parseInt(matcher.group(1), 16) - 53;
+                                if (i >= 128) {
+                                    mOutputReportChars.put(i, chr);
+                                }
+                            } catch (NumberFormatException e) {
+                                // Ignore unparseable characteristics
+                            }
+                        }
                     }
                 }
 
@@ -422,7 +442,33 @@ public class SteamController extends AbstractController {
     }
 
     @Override
-    public void rumble(short lowFreqMotor, short highFreqMotor) {}
+    public void rumble(short lowFreqMotor, short highFreqMotor) {
+        LimeLog.info("SteamController rumble called: low=" + lowFreqMotor + " high=" + highFreqMotor + " mDetectedProductId=" + mDetectedProductId);
+        if (mDetectedProductId == TRITON_BLE_PID) {
+            BluetoothGattCharacteristic chr = mOutputReportChars.get(0x80); // 0x80 = ID_OUT_REPORT_HAPTIC_RUMBLE
+            if (chr != null) {
+                // The 1-byte Report ID is NOT included in the BLE payload.
+                byte[] payload = new byte[9];
+                payload[0] = 0x00;        // Haptic type = 0
+                payload[1] = 0x00;        // intensity LSB
+                payload[2] = 0x00;        // intensity MSB
+                
+                int lowSpeed = lowFreqMotor & 0xFFFF;
+                payload[3] = (byte) (lowSpeed & 0xFF);
+                payload[4] = (byte) ((lowSpeed >> 8) & 0xFF);
+                payload[5] = 0x00;        // left gain
+                
+                int highSpeed = highFreqMotor & 0xFFFF;
+                payload[6] = (byte) (highSpeed & 0xFF);
+                payload[7] = (byte) ((highSpeed >> 8) & 0xFF);
+                payload[8] = 0x00;        // right gain
+                
+                writeCharacteristic(chr.getUuid(), payload);
+            } else {
+                LimeLog.warning("Triton rumble characteristic not found in dynamic map!");
+            }
+        }
+    }
 
     @Override
     public void rumbleTriggers(short leftTrigger, short rightTrigger) {}
@@ -519,7 +565,22 @@ public class SteamController extends AbstractController {
     }
 
     private void queueGattOperation(GattOperation op) {
-        synchronized (mOperations) { mOperations.add(op); }
+        synchronized (mOperations) {
+            // Deduplicate CHR_WRITE operations to prevent GATT write buffer buildup and lag.
+            // If there's already a write queued for the SAME characteristic and SAME length, we replace it.
+            if (op.mOp == GattOperation.Operation.CHR_WRITE && op.mValue != null && op.mValue.length > 0) {
+                java.util.Iterator<GattOperation> it = mOperations.iterator();
+                while (it.hasNext()) {
+                    GattOperation pending = it.next();
+                    if (pending.mOp == GattOperation.Operation.CHR_WRITE && 
+                        pending.mUuid != null && pending.mUuid.equals(op.mUuid) && 
+                        pending.mValue != null && pending.mValue.length == op.mValue.length) {
+                        it.remove();
+                    }
+                }
+            }
+            mOperations.add(op);
+        }
         executeNextGattOperation();
     }
 

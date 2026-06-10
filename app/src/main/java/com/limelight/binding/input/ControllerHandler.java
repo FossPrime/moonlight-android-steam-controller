@@ -2077,7 +2077,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
         for (int i = 0; i < usbDeviceContexts.size(); i++) {
             UsbDeviceContext deviceContext = usbDeviceContexts.valueAt(i);
-
+            LimeLog.info("Checking usbDeviceContext index " + i + ": id=" + deviceContext.id + ", controllerNumber=" + deviceContext.controllerNumber + " (target: " + controllerNumber + "), device=" + deviceContext.device);
             if (deviceContext.controllerNumber == controllerNumber) {
                 foundMatchingDevice = vibrated = true;
                 deviceContext.device.rumble(lowFreqMotor, highFreqMotor);

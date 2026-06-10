@@ -114,7 +114,10 @@ Triton is equipped with a high-performance **6-axis IMU** (3-axis accelerometer 
 
 Triton features dual **Linear Resonant Actuators (LRAs)** instead of traditional ERM motors. These LRAs provide HD haptic feedback, reproducing subtle textures as well as intense vibrations.
 
-* **Rumble Emulation**: Standard low-frequency and high-frequency rumble commands sent by the host (GFE/Sunshine) are parsed by the client. The driver maps these to standard Bluetooth HID Output Reports sent to Triton's command characteristic, which Triton's internal firmware translates into LRA vibration patterns.
+* **Dynamic GATT Characteristic Mapping**: Over Bluetooth LE, Triton does not use a single, fixed write characteristic for output reports. Instead, output report characteristics are dynamically mapped based on the Report ID using the following formula:
+  `Characteristic UUID = 100F6C[Report ID + 0x35]-1735-4313-B402-38567131E5F3`.
+  For example, the standard Haptic Rumble Output Report (`Report ID 0x80` or `128`) uses characteristic `100F6CB5...` (`128 + 53 = 181 = 0xB5`). When sending reports to these mapped characteristics, the 1-byte Report ID prefix is omitted from the payload.
+* **Rumble Emulation**: Standard low-frequency and high-frequency rumble commands sent by the host (GFE/Sunshine) are parsed by the client. The driver maps these to standard `MsgHapticRumble` payloads sent to the dynamically mapped output characteristic, which Triton's internal firmware translates into LRA vibration patterns. For full rumble strength, the haptic payloads typically require specific speed, duration, and gain configurations (`gain` is typically set to `2`).
 * **Trigger Rumble**: Triton supports trigger-specific rumble (independent haptic feedback on the analog triggers).
 * **Capacitive Touch Activation**: Triton features capacitive touch sensors on the trackpads, sticks, and grips ("Grip Sense"). Haptic "clicks" or textures are generated locally by the controller when touch events are detected, simulating mechanical buttons.
 

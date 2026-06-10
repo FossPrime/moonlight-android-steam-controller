@@ -1,5 +1,8 @@
 package com.limelight.binding.input.driver;
 
+import com.limelight.LimeLog;
+import com.limelight.nvstream.input.ControllerPacket;
+
 public abstract class AbstractController {
 
     private final int deviceId;
@@ -14,6 +17,8 @@ public abstract class AbstractController {
     protected float leftStickX, leftStickY;
     protected short capabilities;
     protected byte type;
+
+    private int lastLoggedButtonFlags = -1;
 
     public int getControllerId() {
         return deviceId;

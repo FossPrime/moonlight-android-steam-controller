@@ -1,10 +1,12 @@
 # built application files
 *.apk
+*.apkm
 *.ap_
 *.aab
 output.json
 output-metadata.json
 out/
+CORE/
 
 # files for the dex VM
 *.dex

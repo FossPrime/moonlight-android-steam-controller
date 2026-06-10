@@ -53,6 +53,8 @@ public class SteamController extends AbstractController {
     private UUID mInputCharacteristic;
     private boolean mIsRegistered;
     private boolean mIsConnected;
+    private int lastRawButtons = -1;
+
 
     @SuppressLint("NewApi")
     private class Callback extends BluetoothGattCallback {
@@ -260,20 +262,59 @@ public class SteamController extends AbstractController {
         // Layout matches SteamController.h from SteamlessController
         if (buffer.remaining() < 17) return;
 
+        // Keep a copy of the raw bytes for logging
+        buffer.mark();
+        byte[] rawReport = new byte[buffer.remaining()];
+        buffer.get(rawReport);
+        buffer.reset();
+
         buffer.get(); // sequence counter
 
         int b0 = Byte.toUnsignedInt(buffer.get());
         int b1 = Byte.toUnsignedInt(buffer.get());
         int b2 = Byte.toUnsignedInt(buffer.get());
-        buffer.get(); // flags
+        int b3 = Byte.toUnsignedInt(buffer.get()); // read 4th byte (formerly ignored flags)
+
+        int rawButtons = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+
+        if (rawButtons != lastRawButtons) {
+            lastRawButtons = rawButtons;
+            
+            java.util.ArrayList<String> pressedButtons = new java.util.ArrayList<>();
+            if ((b0 & 0x01) != 0) pressedButtons.add("A");
+            if ((b0 & 0x02) != 0) pressedButtons.add("B");
+            if ((b0 & 0x04) != 0) pressedButtons.add("X");
+            if ((b0 & 0x08) != 0) pressedButtons.add("Y");
+            if ((b0 & 0x10) != 0) pressedButtons.add("SDL_GAMEPAD_BUTTON_MISC1");
+            if ((b0 & 0x20) != 0) pressedButtons.add("RS Click");
+            if ((b0 & 0x40) != 0) pressedButtons.add("Start");
+            if ((b0 & 0x80) != 0) pressedButtons.add("Right Paddle 1");
+            if ((b1 & 0x01) != 0) pressedButtons.add("Right Paddle 2");
+            if ((b1 & 0x02) != 0) pressedButtons.add("RB");
+            if ((b1 & 0x04) != 0) pressedButtons.add("DPAD Down");
+            if ((b1 & 0x08) != 0) pressedButtons.add("DPAD Right");
+            if ((b1 & 0x10) != 0) pressedButtons.add("DPAD Left");
+            if ((b1 & 0x20) != 0) pressedButtons.add("DPAD Up");
+            if ((b1 & 0x40) != 0) pressedButtons.add("Back");
+            if ((b1 & 0x80) != 0) pressedButtons.add("LS Click");
+            if ((b2 & 0x01) != 0) pressedButtons.add("Guide");
+            if ((b2 & 0x02) != 0) pressedButtons.add("Left Paddle 1");
+            if ((b2 & 0x04) != 0) pressedButtons.add("Left Paddle 2");
+            if ((b2 & 0x08) != 0) pressedButtons.add("LB");
+
+            LimeLog.info("Triton Buttons Change: " + pressedButtons.toString());
+        }
 
         setButtonFlag(ControllerPacket.A_FLAG, b0 & 0x01);
         setButtonFlag(ControllerPacket.B_FLAG, b0 & 0x02);
         setButtonFlag(ControllerPacket.X_FLAG, b0 & 0x04);
         setButtonFlag(ControllerPacket.Y_FLAG, b0 & 0x08);
+        setButtonFlag(ControllerPacket.MISC_FLAG, b0 & 0x10);
         setButtonFlag(ControllerPacket.RS_CLK_FLAG, b0 & 0x20);
         setButtonFlag(ControllerPacket.PLAY_FLAG, b0 & 0x40);
+        setButtonFlag(ControllerPacket.PADDLE1_FLAG, b0 & 0x80);
 
+        setButtonFlag(ControllerPacket.PADDLE3_FLAG, b1 & 0x01);
         setButtonFlag(ControllerPacket.RB_FLAG, b1 & 0x02);
         setButtonFlag(ControllerPacket.DOWN_FLAG, b1 & 0x04);
         setButtonFlag(ControllerPacket.RIGHT_FLAG, b1 & 0x08);
@@ -283,6 +324,8 @@ public class SteamController extends AbstractController {
         setButtonFlag(ControllerPacket.LS_CLK_FLAG, b1 & 0x80);
 
         setButtonFlag(ControllerPacket.SPECIAL_BUTTON_FLAG, b2 & 0x01);
+        setButtonFlag(ControllerPacket.PADDLE2_FLAG, b2 & 0x02);
+        setButtonFlag(ControllerPacket.PADDLE4_FLAG, b2 & 0x04);
         setButtonFlag(ControllerPacket.LB_FLAG, b2 & 0x08);
 
         short ltVal = buffer.getShort();

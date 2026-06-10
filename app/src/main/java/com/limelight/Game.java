@@ -1359,6 +1359,16 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public boolean handleKeyDown(KeyEvent event) {
+        boolean isSteamController = event.getDevice() != null &&
+                event.getDevice().getVendorId() == 0x28de &&
+                event.getDevice().getProductId() == 0x1303;
+        if (isSteamController && !com.limelight.binding.input.driver.SteamController.isShareButtonPressed) {
+            int keyCode = event.getKeyCode();
+            if (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_ESCAPE || keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_TAB) {
+                return true; // Consume event and ignore
+            }
+        }
+
         // Pass-through virtual navigation keys
         if ((event.getFlags() & KeyEvent.FLAG_VIRTUAL_HARD_KEY) != 0) {
             return false;
@@ -1441,6 +1451,16 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public boolean handleKeyUp(KeyEvent event) {
+        boolean isSteamController = event.getDevice() != null &&
+                event.getDevice().getVendorId() == 0x28de &&
+                event.getDevice().getProductId() == 0x1303;
+        if (isSteamController && !com.limelight.binding.input.driver.SteamController.isShareButtonPressed) {
+            int keyCode = event.getKeyCode();
+            if (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_ESCAPE || keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_TAB) {
+                return true; // Consume event and ignore
+            }
+        }
+
         // Pass-through virtual navigation keys
         if ((event.getFlags() & KeyEvent.FLAG_VIRTUAL_HARD_KEY) != 0) {
             return false;
@@ -1846,6 +1866,16 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                     eventSource == 12290) // 12290 = Samsung DeX mode desktop mouse
             {
                 int buttonState = event.getButtonState();
+                boolean isSteamController = event.getDevice() != null &&
+                        event.getDevice().getVendorId() == 0x28de &&
+                        event.getDevice().getProductId() == 0x1303;
+                if (isSteamController && !com.limelight.binding.input.driver.SteamController.isShareButtonPressed) {
+                    int mask = MotionEvent.BUTTON_PRIMARY | MotionEvent.BUTTON_SECONDARY | MotionEvent.BUTTON_STYLUS_PRIMARY;
+                    if (com.limelight.binding.input.driver.SteamController.isRightTrackpadClicked) {
+                        mask &= ~MotionEvent.BUTTON_PRIMARY;
+                    }
+                    buttonState &= ~mask;
+                }
                 int changedButtons = buttonState ^ lastButtonState;
 
                 // The DeX touchpad on the Fold 4 sends proper right click events using BUTTON_SECONDARY,

@@ -54,6 +54,8 @@ public class SteamController extends AbstractController {
     private boolean mIsRegistered;
     private boolean mIsConnected;
     private int lastRawButtons = -1;
+    public static volatile boolean isShareButtonPressed = false;
+    public static volatile boolean isRightTrackpadClicked = false;
 
 
     @SuppressLint("NewApi")
@@ -276,6 +278,8 @@ public class SteamController extends AbstractController {
         int b3 = Byte.toUnsignedInt(buffer.get()); // read 4th byte (formerly ignored flags)
 
         int rawButtons = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+        isShareButtonPressed = (b0 & 0x10) != 0;
+        isRightTrackpadClicked = (b2 & 0x40) != 0;
 
         if (lastRawButtons == -1) {
             lastRawButtons = rawButtons;
@@ -408,6 +412,8 @@ public class SteamController extends AbstractController {
     @SuppressLint("MissingPermission")
     @Override
     public void stop() {
+        isShareButtonPressed = false;
+        isRightTrackpadClicked = false;
         if (mGatt != null) {
             mGatt.disconnect();
             mGatt.close();

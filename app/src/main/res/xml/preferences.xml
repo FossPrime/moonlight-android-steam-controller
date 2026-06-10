@@ -75,6 +75,11 @@
             android:summary="@string/summary_checkbox_xb1_driver"
             android:defaultValue="true" />
         <CheckBoxPreference
+            android:key="checkbox_bluetooth_driver"
+            android:title="@string/title_checkbox_bluetooth_driver"
+            android:summary="@string/summary_checkbox_bluetooth_driver"
+            android:defaultValue="true" />
+        <CheckBoxPreference
             android:key="checkbox_usb_bind_all"
             android:dependency="checkbox_usb_driver"
             android:title="@string/title_checkbox_usb_bind_all"

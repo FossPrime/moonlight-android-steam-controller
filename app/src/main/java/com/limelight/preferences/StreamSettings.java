@@ -317,6 +317,13 @@ public class StreamSettings extends Activity {
                 category.removePreference(findPreference("checkbox_usb_driver"));
             }
 
+            // Hide Bluetooth driver option on devices without Bluetooth LE support
+            if (!getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+                PreferenceCategory category =
+                        (PreferenceCategory) findPreference("category_gamepad_settings");
+                category.removePreference(findPreference("checkbox_bluetooth_driver"));
+            }
+
             // Remove PiP mode on devices pre-Oreo, where the feature is not available (some low RAM devices),
             // and on Fire OS where it violates the Amazon App Store guidelines for some reason.
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||

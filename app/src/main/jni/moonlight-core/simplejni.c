@@ -225,6 +225,8 @@ Java_com_limelight_nvstream_jni_MoonBridge_guessControllerType(JNIEnv *env, jcla
             switch (arrControllers[i].m_eControllerType) {
                 case k_eControllerType_XBox360Controller:
                 case k_eControllerType_XBoxOneController:
+                case k_eControllerType_SteamController:
+                case k_eControllerType_SteamControllerV2:
                     return LI_CTYPE_XBOX;
 
                 case k_eControllerType_PS3Controller:
